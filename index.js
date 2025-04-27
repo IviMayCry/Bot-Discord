@@ -132,4 +132,4 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 // Seu token do bot
-client.login('MTM2NjA5MDc5NjQzNjAyOTQ0MA.GG_WTb.lHECgD0SWJ40ZIHy3LS_NXFsQeiP-3tAbQf6YI');
+client.login(process.env.TOKEN);
