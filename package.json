@@ -1,17 +1,12 @@
 {
-  "name": "West Virginia",
+  "name": "bot-discord",
   "version": "1.0.0",
+  "description": "Meu bot no Discord",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
-
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.19.1"
-  },
-  "keywords": [],
-  "description": ""
+    "discord.js": "^14.0.0"
+  }
 }
