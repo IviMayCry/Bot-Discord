@@ -1,4 +1,6 @@
 const { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, Events } = require('discord.js');
+const express = require('express');  // Importando o Express
+const app = express();  // Inicializando o servidor Express
 
 const client = new Client({
     intents: [
@@ -130,20 +132,17 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 });
-    // Importa o Express
-    const express = require('express');
-    const app = express();
 
-    // Cria uma rota simples para "pingar" o bot
-    app.get('/', (req, res) => {
-    res.send('Bot está online!');
-    });
-
-    // Define a porta (padrão para Replit)
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
+// Adicionando a funcionalidade do servidor Express
+const PORT = process.env.PORT || 3000;  // Usando a porta fornecida pela plataforma ou a 3000 por padrão
+app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
-    });
+});
+
+// Rota para manter o bot vivo
+app.get('/', (req, res) => {
+    res.send('Bot está online!');
+});
 
 // Seu token do bot
 client.login(process.env.TOKEN);
