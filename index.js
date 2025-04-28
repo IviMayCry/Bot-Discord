@@ -130,6 +130,20 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 });
+    // Importa o Express
+    const express = require('express');
+    const app = express();
+
+    // Cria uma rota simples para "pingar" o bot
+    app.get('/', (req, res) => {
+    res.send('Bot está online!');
+    });
+
+    // Define a porta (padrão para Replit)
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+    });
 
 // Seu token do bot
 client.login(process.env.TOKEN);
