@@ -1,7 +1,7 @@
-// === Servidor Web ===
 const express = require('express');
 const app = express();
 const port = 3000;
+const axios = require('axios');
 
 app.get('/', (req, res) => {
   res.send('Bot 2 está online');
@@ -11,7 +11,6 @@ app.listen(port, () => {
   console.log(`Servidor do Bot 2 rodando na porta ${port}`);
 });
 
-// === Discord Bot ===
 const { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, Events } = require('discord.js');
 require('dotenv').config();
 
@@ -30,23 +29,24 @@ const client = new Client({
 const canalCadastroID = '1200930442019356682';
 const cargoCadastroID = '1200892698786271353';
 const cargoParaRemoverID = '1200929948202967100';
-const canalPingID = '1366800096414404670'; // Substitua pelo ID real
-const bot1ID = '1366799238553665627'; // Substitua pelo ID real do Bot 1
+const canalPingID = '1366800096414404670'; // substitua pelo canal de pings entre bots
+const bot1ID = '1366799238553665627'; // substitua pelo ID do Bot 1 (anti-sleep)
 
 client.once('ready', async () => {
   console.log(`Bot 2 online como ${client.user.tag}`);
 
-  // Keep-alive por mensagem no canal
+  // Keep-alive ping para o Bot 1
   setInterval(async () => {
     try {
-      const canalPing = await client.channels.fetch(canalPingID);
-      if (canalPing && canalPing.isTextBased()) {
-        await canalPing.send(`<@${bot1ID}> estou ativo!`);
+      const canal = await client.channels.fetch(canalPingID);
+      if (canal) {
+        await canal.send(`<@${bot1ID}> ping de verificação do Bot 2`);
+        console.log('Ping enviado para Bot 1');
       }
     } catch (err) {
-      console.error('Erro ao enviar ping:', err.message);
+      console.error('Erro ao enviar ping para Bot 1:', err.message);
     }
-  }, 2 * 60 * 1000); // A cada 2 minutos
+  }, 2 * 60 * 1000);
 
   const channel = await client.channels.fetch(canalCadastroID);
   if (!channel) return console.log('Canal de cadastro não encontrado.');
@@ -70,6 +70,14 @@ client.once('ready', async () => {
 });
 
 require('./onMemberJoin')(client);
+
+// Responder ao ping do Bot 1
+client.on('messageCreate', async (message) => {
+  if (message.author.id === bot1ID) {
+    console.log('Ping recebido do Bot 1');
+    await message.channel.send(`<@${bot1ID}> estou online também!`);
+  }
+});
 
 client.on(Events.InteractionCreate, async interaction => {
   if (interaction.isButton() && interaction.customId === 'registrar') {
@@ -116,8 +124,16 @@ client.on(Events.InteractionCreate, async interaction => {
     const sobrenome = interaction.fields.getTextInputValue('sobrenome');
     const idJogador = interaction.fields.getTextInputValue('id');
 
-    if (!/^[A-Za-z]+$/.test(nome) || !/^[A-Za-z]+$/.test(sobrenome) || !/^\d+$/.test(idJogador)) {
-      return interaction.reply({ content: '❌ Dados inválidos.', ephemeral: true });
+    if (!/^[A-Za-z]+$/.test(nome)) {
+      return interaction.reply({ content: '❌ O nome deve conter apenas letras.', ephemeral: true });
+    }
+
+    if (!/^[A-Za-z]+$/.test(sobrenome)) {
+      return interaction.reply({ content: '❌ O sobrenome deve conter apenas letras.', ephemeral: true });
+    }
+
+    if (!/^\d+$/.test(idJogador)) {
+      return interaction.reply({ content: '❌ O ID deve conter apenas números.', ephemeral: true });
     }
 
     const novoApelido = `${nome} ${sobrenome} | ${idJogador}`;
@@ -130,13 +146,14 @@ client.on(Events.InteractionCreate, async interaction => {
 
     try {
       await interaction.member.setNickname(novoApelido);
+
       const cargoCadastro = interaction.guild.roles.cache.get(cargoCadastroID);
       if (cargoCadastro) await interaction.member.roles.add(cargoCadastro);
 
       const cargoParaRemover = interaction.guild.roles.cache.get(cargoParaRemoverID);
       if (cargoParaRemover) await interaction.member.roles.remove(cargoParaRemover);
 
-      await interaction.reply({ content: `✅ Registro concluído, **${novoApelido}**.`, ephemeral: true });
+      await interaction.reply({ content: `✅ Registro concluído! Bem-vindo, **${novoApelido}**.`, ephemeral: true });
     } catch (error) {
       console.error(error);
       await interaction.reply({ content: '❌ Erro ao registrar.', ephemeral: true });
