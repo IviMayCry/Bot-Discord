@@ -11,7 +11,18 @@ app.listen(port, () => {
   console.log(`Servidor do Bot 2 rodando na porta ${port}`);
 });
 
-const { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, Events } = require('discord.js');
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  Events
+} = require('discord.js');
 require('dotenv').config();
 
 const client = new Client({
@@ -29,25 +40,31 @@ const client = new Client({
 const canalCadastroID = '1200930442019356682';
 const cargoCadastroID = '1200892698786271353';
 const cargoParaRemoverID = '1200929948202967100';
-const canalPingID = '1366800096414404670'; // substitua pelo canal de pings entre bots
-const bot1ID = '1366799238553665627'; // substitua pelo ID do Bot 1 (anti-sleep)
+const canalPingID = 'SEU_CANAL_PING_ID'; // 🔁 Substitua pelo canal de troca de mensagens entre os bots
 
 client.once('ready', async () => {
   console.log(`Bot 2 online como ${client.user.tag}`);
 
-  // Keep-alive ping para o Bot 1
-  setInterval(async () => {
-    try {
-      const canal = await client.channels.fetch(canalPingID);
-      if (canal) {
-        await canal.send(`<@${bot1ID}> ping de verificação do Bot 2`);
-        console.log('Ping enviado para Bot 1');
-      }
-    } catch (err) {
-      console.error('Erro ao enviar ping para Bot 1:', err.message);
+  // Envia mensagem de ativação ao canal de pings
+  try {
+    const canalPing = await client.channels.fetch(canalPingID);
+    if (canalPing) {
+      await canalPing.send('✅ Bot 2 está online!');
+    } else {
+      console.log('❌ Canal de ping não encontrado.');
     }
-  }, 2 * 60 * 1000);
+  } catch (err) {
+    console.error('Erro ao enviar mensagem de ping:', err);
+  }
 
+  // Keep-alive ping para o Bot 1 a cada 4 minutos
+  setInterval(() => {
+    axios.get('https://09bf4dd4-0309-4001-ab70-61d44b837b6d-00-35idm3z4bvyik.riker.replit.dev/')
+      .then(() => console.log('Ping enviado para Bot 1'))
+      .catch(err => console.error('Erro ao pingar Bot 1:', err.message));
+  }, 4 * 60 * 1000);
+
+  // Envia painel de registro se não existir
   const channel = await client.channels.fetch(canalCadastroID);
   if (!channel) return console.log('Canal de cadastro não encontrado.');
 
@@ -69,16 +86,7 @@ client.once('ready', async () => {
   }
 });
 
-require('./onMemberJoin')(client);
-
-// Responder ao ping do Bot 1
-client.on('messageCreate', async (message) => {
-  if (message.author.id === bot1ID) {
-    console.log('Ping recebido do Bot 1');
-    await message.channel.send(`<@${bot1ID}> estou online também!`);
-  }
-});
-
+// Interação de registro
 client.on(Events.InteractionCreate, async interaction => {
   if (interaction.isButton() && interaction.customId === 'registrar') {
     const membro = await interaction.guild.members.fetch(interaction.user.id);
@@ -161,4 +169,16 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
+// Evento para responder ao Bot 1 com uma mensagem
+client.on('messageCreate', async message => {
+  if (
+    message.channel.id === canalPingID &&
+    !message.author.bot &&
+    message.content === '!ping-bot2'
+  ) {
+    await message.channel.send('✅ Bot 2 ativo!');
+  }
+});
+
+require('./onMemberJoin')(client);
 client.login(process.env.TOKEN);
