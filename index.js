@@ -1,6 +1,18 @@
+// === [Keep-alive / Servidor Web para UptimeRobot] ===
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.get('/', (req, res) => {
+  res.send('Bot está online');
+});
+
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
+});
+
+// === [Código do Bot Discord] ===
 const { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, Events } = require('discord.js');
-const express = require('express');  // Importando o Express
-const app = express();  // Inicializando o servidor Express
 
 const client = new Client({
     intents: [
@@ -133,16 +145,5 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-// Adicionando a funcionalidade do servidor Express
-const PORT = process.env.PORT || 3000;  // Usando a porta fornecida pela plataforma ou a 3000 por padrão
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-});
-
-// Rota para manter o bot vivo
-app.get('/', (req, res) => {
-    res.send('Bot está online!');
-});
-
-// Seu token do bot
+// Login do bot com o token (recomendado via variável de ambiente)
 client.login(process.env.TOKEN);
