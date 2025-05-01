@@ -44,10 +44,54 @@ const canalPingID = 'SEU_CANAL_PING_ID';
 const canalBotaoCargoID = '1208410007461302382';
 const cargoVIPID = '1203715357127348277';
 
+// Função para enviar/recriar botão VIP
+async function enviarMensagemCargoVIP(client) {
+  try {
+    const canal = await client.channels.fetch(canalBotaoCargoID);
+    if (!canal) {
+      console.log('❌ Canal de cargo VIP não encontrado.');
+      return;
+    }
+
+    const mensagens = await canal.messages.fetch({ limit: 10 });
+    const mensagemExistente = mensagens.find(msg =>
+      msg.author.id === client.user.id &&
+      msg.components.length > 0 &&
+      msg.components[0].components.find(c => c.customId === 'receber_cargo')
+    );
+
+    if (!mensagemExistente) {
+      const botaoCargo = new ButtonBuilder()
+        .setCustomId('receber_cargo')
+        .setLabel('Clique para receber o cargo!')
+        .setStyle(ButtonStyle.Primary);
+
+      const row = new ActionRowBuilder().addComponents(botaoCargo);
+
+      const mensagem = await canal.send({
+        content: '🎉 Clique aqui para receber seu VIP Inicial\n\n💡 Após ganhar a TAG aqui, dar um `/VIP` no servidor.',
+        components: [row]
+      });
+
+      try {
+        await mensagem.pin();
+      } catch (e) {
+        console.log('Não foi possível fixar a mensagem:', e.message);
+      }
+
+      console.log('✅ Mensagem de cargo VIP enviada.');
+    } else {
+      console.log('✅ Mensagem de cargo VIP já existe.');
+    }
+  } catch (err) {
+    console.error('Erro ao configurar mensagem de cargo VIP:', err.message);
+  }
+}
+
 client.once('ready', async () => {
   console.log(`Bot 2 online como ${client.user.tag}`);
 
-  // Envia mensagem de ativacao
+  // Mensagem de status
   try {
     const canalPing = await client.channels.fetch(canalPingID);
     if (canalPing) {
@@ -57,7 +101,7 @@ client.once('ready', async () => {
     console.error('Erro ao enviar mensagem de ping:', err);
   }
 
-  // Ping para manter bot1 online
+  // Ping para manter Bot 1 online
   setInterval(() => {
     axios.get('https://09bf4dd4-0309-4001-ab70-61d44b837b6d-00-35idm3z4bvyik.riker.replit.dev/')
       .then(() => console.log('Ping enviado para Bot 1'))
@@ -85,32 +129,8 @@ client.once('ready', async () => {
     });
   }
 
-  // Botão para cargo VIP Inicial
-  const canalBotao = await client.channels.fetch(canalBotaoCargoID);
-  if (canalBotao) {
-    const mensagensBotao = await canalBotao.messages.fetch({ limit: 10 });
-    const jaExiste = mensagensBotao.find(msg => msg.author.id === client.user.id && msg.components.length > 0);
-
-    if (!jaExiste) {
-      const botaoCargo = new ButtonBuilder()
-        .setCustomId('receber_cargo')
-        .setLabel('Clique para receber o cargo!')
-        .setStyle(ButtonStyle.Primary);
-
-      const rowCargo = new ActionRowBuilder().addComponents(botaoCargo);
-
-      const mensagemEnviada = await canalBotao.send({
-        content: '🎉 Clique aqui para receber seu VIP Inicial\n\n💡 Após ganhar a TAG aqui, dar um `/VIP` no servidor.',
-        components: [rowCargo]
-      });
-
-      try {
-        await mensagemEnviada.pin();
-      } catch (e) {
-        console.log('Não foi possível fixar a mensagem:', e.message);
-      }
-    }
-  }
+  // Enviar botão de cargo VIP
+  await enviarMensagemCargoVIP(client);
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -207,6 +227,18 @@ client.on('messageCreate', async message => {
     message.content === '!ping-bot2'
   ) {
     await message.channel.send('✅ Bot 2 ativo!');
+  }
+});
+
+// Recria mensagem do cargo VIP se apagada
+client.on('messageDelete', async message => {
+  if (
+    message.channel.id === canalBotaoCargoID &&
+    message.author?.id === client.user.id &&
+    message.components?.[0]?.components?.find(c => c.customId === 'receber_cargo')
+  ) {
+    console.log('⚠️ Mensagem de cargo VIP apagada. Recriando...');
+    await enviarMensagemCargoVIP(client);
   }
 });
 
